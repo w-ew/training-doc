@@ -12,7 +12,7 @@ TMPFILE=/tmp/training.html.tmp
 all: $(TARGET).html $(TARGET).pdf
 
 $(TARGET).pdf: $(SRC)
-	pandoc $(SRC) --number-sections --latex-engine=xelatex --highlight-style=$(HIGHLIGHT) -o $(TARGET).pdf
+	pandoc $(SRC) --number-sections --latex-engine=xelatex --listings -H config.tex -o $(TARGET).pdf
 
 $(TARGET).html: $(SRC) $(SRC_HTML)
 	cat header.html > $(TMPFILE)

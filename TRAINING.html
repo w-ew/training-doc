@@ -1,0 +1,445 @@
+<html><head>
+
+<title>NXP i.MX6 Training</title>
+
+<link rel='stylesheet' type='text/css' href='swiss.css'>
+<meta charset="utf-8" /> 
+</head><body>
+
+<h1 id="nxp-i.mx6-ul-training" class="unnumbered">NXP i.MX6 UL Training</h1>
+<div class="figure">
+<img src="nxp_logo.png" />
+</div>
+<h2 id="contents" class="unnumbered">Contents</h2>
+<ol>
+<li><a href="#introduction">Introduction</a>
+<ol style="list-style-type: decimal">
+<li><a href="#safety-notice">Safety notice</a></li>
+<li><a href="#linux-tips-and-tricks">Linux tips and tricks</a></li>
+</ol></li>
+<li><a href="#i.mx-boot-process">i.MX Boot Process</a>
+<ol style="list-style-type: decimal">
+<li><a href="#boot-introduction">Boot introduction</a></li>
+<li><a href="#partitioning">Partitioning</a></li>
+<li><a href="#file-system-creation">File system creation</a></li>
+</ol></li>
+<li><a href="#u-boot">u-boot</a>
+<ol style="list-style-type: decimal">
+<li><a href="#u-boot-introduction">u-boot introduction</a></li>
+<li><a href="#configuring-u-boot">Configuring u-boot</a></li>
+<li><a href="#building-u-boot">Building u-boot</a></li>
+<li><a href="#u-boot-deployment">u-boot deployment</a></li>
+</ol></li>
+<li><a href="#linux-kernel">Linux kernel</a>
+<ol style="list-style-type: decimal">
+<li><a href="#configuring-the-kernel">Configuring the kernel</a></li>
+<li><a href="#building-the-kernel">Building the kernel</a></li>
+<li><a href="#kernel-deployment">Kernel deployment</a></li>
+</ol></li>
+<li><a href="#root-filesystem">Root filesystem</a>
+<ol style="list-style-type: decimal">
+<li><a href="#yocto-introduction">Yocto introduction</a></li>
+<li><a href="#meta-layers-and-recipes">Meta layers and recipes</a></li>
+<li><a href="#generating-the-root-filesystem">Generating the root filesystem</a></li>
+<li><a href="#deployment-and-installing-modules">Deployment and installing modules</a></li>
+</ol></li>
+<li><p><a href="#first-boot">First boot</a></p></li>
+<li><a href="#communication-interfaces">Communication interfaces</a>
+<ol style="list-style-type: decimal">
+<li><a href="#ethernet">Ethernet</a></li>
+<li><a href="#usb-gadget">USB Gadget</a></li>
+<li><a href="#i2c-accelerometer">I2C: Accelerometer</a></li>
+</ol></li>
+<li><p><a href="#remote-debugging">Remote debugging</a></p></li>
+<li><a href="#running-web-applications">Running web applications</a>
+<ol style="list-style-type: decimal">
+<li><a href="#preparation-accessing-the-filesystem-remotely">Preparation: accessing the filesystem remotely</a></li>
+<li><a href="#sensors">Sensors</a></li>
+<li><a href="#audio-streaming">Audio streaming</a></li>
+</ol></li>
+<li><p><a href="#qa">Q&amp;A</a></p></li>
+</ol>
+<h1 id="introduction"><span class="header-section-number">1</span> Introduction</h1>
+<p>Welcome to the NXP i.MX6UL Training hands-on workshop!</p>
+<p>The session is expected to take approximately 4 hours.</p>
+<p>The user password is 'user', you may be asked to enter it a few times throughout the training. The user has full sudo rights to perform administrative tasks on the system.</p>
+<h2 id="safety-notice"><span class="header-section-number">1.1</span> Safety notice</h2>
+<p><strong>WARNING:</strong></p>
+<p>When incorrectly using some commands or applications in this training:</p>
+<p><code>dd</code></p>
+<p><code>gparted</code></p>
+<p>Data on your system drive may be permanently erased or made difficult to recover.</p>
+<p>Use caution when issuing the above commands, and double check that you specified the correct block device.</p>
+<p>In most laptops, Linux will automatically assign <code>/dev/sda</code> to the internal drive, and <code>/dev/sdb</code> to the optical drive (if present). In this training, however, the internal SATA controller has been disabled by black-listing the ahci driver. As a result, <code>/dev/sda</code> should be assigned to the USB drive, and <code>/dev/sdb</code> to the USB SD card reader. You can also use the integrated SD card reader in your laptop, which should be identified as <code>/dev/mmcblk0</code>.</p>
+<h2 id="linux-tips-and-tricks"><span class="header-section-number">1.2</span> Linux tips and tricks</h2>
+<p>We will be using Linux throughout the entire training, mostly through the command line interface. It is possible to copy and paste commands from this file into the console - use <code>CTRL</code> + <code>SHIFT</code> + <code>V</code> to paste. You can also select text and paste the last selection with the middle mouse button.</p>
+<p>The Linux console supports tab expansion. If you start writing a command or file path, press <code>TAB</code> once to have the command expanded, or twice to see possible options:</p>
+<pre><code>$ cd t [TAB]
+$ cd training/
+
+$ ls /dev/sda [TAB][TAB]
+sda sda1 sda2</code></pre>
+<p>In Linux, <code>~</code> points to the current user's home directory:</p>
+<pre><code>$ echo ~
+/home/user</code></pre>
+<p>In this tutorial, <code>$</code> denotes commands run as a normal user from the development PC, and <code>#</code>, commands run as root on the i.MX6UL EVK.</p>
+<h1 id="i.mx-boot-process"><span class="header-section-number">2</span> i.MX Boot Process</h1>
+<h2 id="boot-introduction"><span class="header-section-number">2.1</span> Boot introduction</h2>
+<p>The boot process begins at Power On Reset (POR) where the hardware reset logic forces the ARM core to begin execution starting from the on-chip Boot ROM.</p>
+<p>Based on one-time programmable fuse settings, BOOT_MODE and BOOT_CFG pins, a boot device is selected. The following boot devices are supported:</p>
+<ul>
+<li>NOR Flash</li>
+<li>NAND Flash</li>
+<li>OneNAND Flash</li>
+<li>SD/MMC</li>
+<li>Serial (SPI) NOR Flash and EEPROM</li>
+<li>QuadSPI (QSPI) Flash</li>
+<li>USB/UART Serial Downloader</li>
+</ul>
+<p>Boot ROM then initializes the boot device and loads an initial boot region into internal RAM. The region should contain an Image Vector Table structure, which contains data necessary to initialize the DRAM and load the full boot image.</p>
+<p>From this point, u-boot performs some peripheral initialization, and loads the kernel and flattened device tree. This process is highly configurable through u-boot environment variables.</p>
+<p>It is possible to generate an entire SD card image, including u-boot and the Linux kernel, using Yocto BSP. In this training, however, we will build these components separately from the root filesystem.</p>
+<p>Full source code for u-boot and Linux is available at <a href="http://git.freescale.com">http://git.freescale.com</a>.</p>
+<div class="figure">
+<img src="git_freescale_com.png" />
+</div>
+<h2 id="partitioning"><span class="header-section-number">2.2</span> Partitioning</h2>
+<p>We need to create a partition table for the following card layout:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Start</th>
+<th align="right">Size</th>
+<th align="right">Partition</th>
+<th align="left">Filesystem</th>
+<th align="right">Label</th>
+<th align="left">Use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="right">1KB</td>
+<td align="right">-</td>
+<td align="left"></td>
+<td align="right"></td>
+<td align="left">Partition table and MBR</td>
+</tr>
+<tr class="even">
+<td align="right">1K</td>
+<td align="right">end at 4MB</td>
+<td align="right">-</td>
+<td align="left"></td>
+<td align="right"></td>
+<td align="left">u-boot</td>
+</tr>
+<tr class="odd">
+<td align="right">4M</td>
+<td align="right">16MB</td>
+<td align="right">1</td>
+<td align="left">fat16</td>
+<td align="right">boot</td>
+<td align="left">Boot partition</td>
+</tr>
+<tr class="even">
+<td align="right">20M</td>
+<td align="right">64MB+</td>
+<td align="right">2</td>
+<td align="left">ext3</td>
+<td align="right">rootfs</td>
+<td align="left">Root filesystem</td>
+</tr>
+</tbody>
+</table>
+<p>You can use gparted (in the menu: System -&gt; Administration -&gt; GParted), fdisk or cfdisk. Keep in mind that fdisk uses 512-byte sectors for addressing.</p>
+<div class="figure">
+<img src="gparted.png" />
+</div>
+<p>In order to identify which <code>/dev</code> node corresponds to the USB card reader, issue <code>dmesg -w</code> before plugging it into the USB port. When using an USB card reader, you should see something like:</p>
+<pre><code>[21870.506727]  sdb: sdb1 sdb2
+[21870.509486] sd 1:0:0:0: [sdb] Attached SCSI removable disk</code></pre>
+<p>In the example above, <code>/dev/sdb</code> is the entire SD card, while <code>/dev/sdb1</code> and <code>/dev/sdb2</code> are the primary partitions.</p>
+<p>If using an internal SD card slot of your laptop, you will see <code>/dev/mmcblk0</code>, <code>/dev/mmcblk0p1</code>, and <code>/dev/mmcblk0p2</code>, respectively.</p>
+<p><strong>Note:</strong> You may need to re-insert the card when using some internal SD readers.</p>
+<h2 id="file-system-creation"><span class="header-section-number">2.3</span> File system creation</h2>
+<p>If you used fdisk/cfdisk, you need to create the file systems manually:</p>
+<pre><code>$ mkfs.fat /dev/sdb1 -n boot
+$ mkfs.ext3 /dev/sdb2 -L rootfs</code></pre>
+<h1 id="u-boot"><span class="header-section-number">3</span> u-boot</h1>
+<h2 id="u-boot-introduction"><span class="header-section-number">3.1</span> u-boot introduction</h2>
+<p>Das U-Boot, or Universal Bootloader, is an open-source bootloader that NXP MPU platforms use to load and run the Linux kernel. We support ARM, ARM64 (Layerscape LS2, future i.MX products), and Power Architecture (QoriQ).</p>
+<p>The u-boot image includes a boot header, which BootROM uses to determine the load address, load size, and optional boot security.</p>
+<h2 id="configuring-u-boot"><span class="header-section-number">3.2</span> Configuring u-boot</h2>
+<p>u-boot sources are located at <code>~/training/uboot-imx</code>.</p>
+<p>The source repository can be cloned with the following command:</p>
+<pre><code>$ git clone git://git.freescale.com/imx/uboot-imx.git -b imx_v2015.04_4.1.15_1.0.0_ga</code></pre>
+<p>In the default configuration for i.MX6UL EVK, u-boot expects to see the SD card it has booted from in the microSD card holder on the CPU daughter card (SD2). Because we are using the full-size SD slot on the baseboard (SD1), the default configuration has been modified.</p>
+<p>A local git branch has been created to implement these changes.</p>
+<pre><code>$ cd ~/training/uboot-imx
+$ git reset --hard ex1
+HEAD is now at 9349e3c... Changing boot device from SD2 (microSD on CPU card) to SD1 (SD on base board).</code></pre>
+<pre class="sourceCode diff"><code class="sourceCode diff">$ git show
+commit 9349e3cc42146ef217c94cbbbc4d014edd881961
+Author: training &lt;training@example.net&gt;
+Date:   Sun Apr 17 02:20:56 2016 +0000
+
+    Changing boot device from SD2 (microSD on CPU card) to SD1 (SD on base board).
+
+<span class="kw">diff --git a/include/configs/mx6ul_14x14_evk.h b/include/configs/mx6ul_14x14_evk.h</span>
+index edeac03..87d5a1c 100644
+<span class="dt">--- a/include/configs/mx6ul_14x14_evk.h</span>
+<span class="dt">+++ b/include/configs/mx6ul_14x14_evk.h</span>
+<span class="dt">@@ -381,9 +381,9 @@</span>
+ #define CONFIG_ENV_SIZE                        CONFIG_ENV_SECT_SIZE
+ #endif
+ 
+<span class="st">-#define CONFIG_SYS_MMC_ENV_DEV         1   /* USDHC2 */</span>
+<span class="ot">+#define CONFIG_SYS_MMC_ENV_DEV         0   /* USDHC1 */</span>
+ #define CONFIG_SYS_MMC_ENV_PART                0       /* user area */
+<span class="st">-#define CONFIG_MMCROOT                 &quot;/dev/mmcblk1p2&quot;  /* USDHC2 */</span>
+<span class="ot">+#define CONFIG_MMCROOT                 &quot;/dev/mmcblk0p2&quot;  /* USDHC1 */</span>
+ 
+ #define CONFIG_OF_LIBFDT
+ #define CONFIG_CMD_BOOTZ</code></pre>
+<p>If there are any changes to the code and you get an error message when trying to check out, you can discard the changes with <code>git reset --hard ex1</code>. Normally, you would commit the chagned code and then use <code>git checkout ex1</code> instead.</p>
+<h2 id="building-u-boot"><span class="header-section-number">3.3</span> Building u-boot</h2>
+<p>A cross-compiler is necessary to build binaries for a different architecture. We will use the cross-compiling toolchan is installed in <code>/opt/fsl-imx-x11/4.1.15-1.0.0/</code>:</p>
+<pre><code>$ source /opt/fsl-imx-x11/4.1.15-1.0.0/environment-setup-cortexa7hf-vfp-neon-poky-linux-gnueabi</code></pre>
+<p>This sets the environment variables for the <code>make</code> utility to use the cross-toolchain.</p>
+<p>A configuration must be selected to build for a specific board:</p>
+<p><code>$ make mx6ul_14x14_evk_defconfig</code></p>
+<p>You can see the list of valid configurations in the <code>configs/</code> directory.</p>
+<p><code>$ make -j4 u-boot.imx</code></p>
+<ul>
+<li><code>u-boot.imx</code> is the binary, with boot header, to put on the SD card.</li>
+<li><code>-j4</code> means <code>make</code> will run at most 4 tasks concurrently, instead of just one.</li>
+</ul>
+<h2 id="u-boot-deployment"><span class="header-section-number">3.4</span> u-boot deployment</h2>
+<p>When partitioning with <code>fdisk</code>, we left some space before the first partition. We will now copy u-boot.imx directly onto that space:</p>
+<p><code>$ sudo dd if=u-boot.imx of=/dev/sdb bs=512 seek=2</code></p>
+<p><code>dd</code> is a low-level copy utility. Here, we copy <code>u-boot.imx</code> onto the SD card, in 512-byte blocks, and we start at block 2 (1 KB offset). This offset is necessary for storing the boot block and partition table of the device.</p>
+<h1 id="linux-kernel"><span class="header-section-number">4</span> Linux kernel</h1>
+<h2 id="configuring-the-kernel"><span class="header-section-number">4.1</span> Configuring the kernel</h2>
+<p>Linux kernel source tree is located at <code>~/training/linux-2.6-imx</code>.</p>
+<p>The source repository can be cloned with the following command:</p>
+<p><code>$ git clone git://git.freescale.com/imx/linux-2.6-imx.git -b imx_4.1.15_1.0.0_ga</code></p>
+<p>The repository name is kept for historic reasons, the latest release at the time of writing is 4.1.15.</p>
+<p>In one of the following exercises, we will be using the on-board magnetometer (NXP MAG3110) with a userspace driver. In order to avoid conflicts on the I2C bus, the magnetometer has been disabled. We will disable the magnetometer by modifying the Linux Device Tree.</p>
+<p>The Device Tree is a data structure for describing hardware. Rather than hard coding every detail of a device into an operating system, many aspect of the hardware can be described in a data structure that is loaded into RAM before kernel starts.</p>
+<p>The tree is structured as device nodes, containing properties and child nodes. Properties are simple name-value pairs.</p>
+<p>The locally created version <code>ex1</code> disables the magnetometer:</p>
+<pre><code>$ cd ~/training/linux-2.6-imx
+$ git reset --hard ex1
+HEAD is now at a13a6cd... Disable mag3110 device on i2c1.</code></pre>
+<pre class="sourceCode diff"><code class="sourceCode diff">$ git show
+commit a13a6cdb401b03f7e9479fce89dae13cf18b7942
+Author: training &lt;training@example.net&gt;
+Date:   Sun Apr 17 15:32:08 2016 +0000
+
+    Disable mag3110 device on i2c1.
+
+<span class="kw">diff --git a/arch/arm/boot/dts/imx6ul-14x14-evk.dts b/arch/arm/boot/dts/imx6ul-14x14-evk.dts</span>
+index 430da40..5d323d3 100644
+<span class="dt">--- a/arch/arm/boot/dts/imx6ul-14x14-evk.dts</span>
+<span class="dt">+++ b/arch/arm/boot/dts/imx6ul-14x14-evk.dts</span>
+<span class="dt">@@ -231,6 +231,7 @@</span>
+                compatible = &quot;fsl,mag3110&quot;;
+                reg = &lt;0x0e&gt;;
+                position = &lt;2&gt;;
+<span class="ot">+               status = &quot;disabled&quot;;</span>
+        };
+ 
+        fxls8471@1e {</code></pre>
+<ul>
+<li><code>status</code> is a universal property, it can be used to enable or disable any device on the tree.</li>
+<li><code>compatible</code> identifies the driver to be loaded for the device.</li>
+</ul>
+<h2 id="building-the-kernel"><span class="header-section-number">4.2</span> Building the kernel</h2>
+<p>As in the u-boot task, we need to have the environment set up to use the cross-toolchain:</p>
+<pre><code>$ source /opt/fsl-imx-x11/4.1.15-1.0.0/environment-setup-cortexa7hf-vfp-neon-poky-linux-gnueabi</code></pre>
+<p>Configs are used to define the features (device drivers, subsystems etc.) we want to have in the kernel:</p>
+<p><code>$ make imx_v7_defconfig</code></p>
+<p>Note that there is a single kernel config for all i.MX series MPUs based on Cortex-A (i.MX51/53, i.MX6SL/S/DL/D/Q/D+/Q+/SX/UL and i.MX7S/D).</p>
+<p>You can access a configuration interface to modify the configuration by issuing:</p>
+<p><code>$ make menuconfig</code></p>
+<p>For example, later in the training we will be using the USB Ethernet Gadget driver, which is enabled by <em>Device Drivers</em> → <em>USB support</em> → <em>USB Gadget Support</em> → <em>Ethernet Gadget (with CDC Ethernet support)</em>. <code>&lt;M&gt;</code> denotes that it will be built as a loadable kernel module, as opposed to being linked into the kernel binary.</p>
+<p>Now, build the compressed kernel image, modules and flattened devce tree files:</p>
+<p><code>$ make -j4 zImage modules dtbs</code></p>
+<p>The modules are now located at various places in the source tree. To place them in a single directory, which can later be deployed:</p>
+<pre><code>$ rm -R ../linux-2.6-modules/lib
+$ INSTALL_MOD_PATH=../linux-2.6-modules/ make modules_install</code></pre>
+<h2 id="kernel-deployment"><span class="header-section-number">4.3</span> Kernel deployment</h2>
+<p>Copy the following files onto the <code>boot</code> partition of the SD card:</p>
+<ul>
+<li><code>arch/arm/boot/zImage</code></li>
+<li><code>arch/arm/boot/dts/imx6ul-14x14-evk.dtb</code></li>
+</ul>
+<h1 id="root-filesystem"><span class="header-section-number">5</span> Root filesystem</h1>
+<h2 id="yocto-introduction"><span class="header-section-number">5.1</span> Yocto introduction</h2>
+<p>The Yocto Project is an open source collaboration project that provides templates, tools and methods to help you create custom Linux-based systems for embedded products regardless of the hardware architecture.</p>
+<p>Among other things, the Yocto Project uses a build host based on the OpenEmbedded (OE) project, which uses the BitBake tool, to construct complete Linux images.</p>
+<div class="figure">
+<img src="yocto-environment-ref.png" />
+</div>
+<p>Read more:</p>
+<p><a href="http://www.yoctoproject.org/docs/2.0/ref-manual/ref-manual.html#intro-welcome">Yocto Project Reference Manual</a></p>
+<p><a href="http://www.yoctoproject.org/docs/2.0/dev-manual/dev-manual.html">Yocto Project Development Manual</a></p>
+<h2 id="meta-layers-and-recipes"><span class="header-section-number">5.2</span> Meta layers and recipes</h2>
+<p>Files that have the .bb suffix are &quot;recipe&quot; files. In general, a recipe contains information about a single piece of software. This information includes the location from which to download the unaltered source, any source patches to be applied to that source (if needed), which special configuration options to apply, how to compile the source files, and how to package the compiled output. For image recipes, the recipe defines which packages are to be installed on the target systems, what features are required, how large the filesystem image should be, etc.</p>
+<p>Recipes can be extended or overridden by append files (.bbappend). Doing so isolates your changes from the main recipe, making them much more manageable.</p>
+<p>Recipes are organised into meta layers. Layers make it possible to keep new recipes and changes to existing ones, in one place. Meta layers are supplied by silicon vendors (e.g. meta-fsl-arm) to support a hardware platform, or the community (meta-openembedded) for base system and generic software packages, or software providers (meta-qt5).</p>
+<p>A new layer was created for this training, meta-training. It contains one image recipe, called &quot;training-image&quot;, and two apend files to modify network device configuration and build options for vorbis-tools.</p>
+<pre><code>meta-training
+├── conf/
+│   └── layer.conf
+├── recipes-bsp/
+│   └── images/
+│       └── training-image.bb
+└── recipes-tweaks/
+    ├── init-ifupdown-1.0/
+    │   ├── files/
+    │   │   └── interfaces
+    │   └── init-ifupdown_1.0.bbappend
+    └── vorbis-tools/
+        └── vorbis-tools_1.4.0.bbappend</code></pre>
+<h2 id="generating-the-root-filesystem"><span class="header-section-number">5.3</span> Generating the root filesystem</h2>
+<p>For performance reasons and internet connectivity requirements, the NXP Yocto BSP for i.MX6UL has been pre-installed. Refer to Yocto Project User's Guide inside the documentation package <a href="https://www.nxp.com/webapp/Download?colCode=L4.1.15_1.0.0_LINUX_DOCS&amp;location=null&amp;fpsp=1&amp;WT_TYPE=Supporting%20Information&amp;WT_VENDOR=FREESCALE&amp;WT_FILE_FORMAT=gz&amp;WT_ASSET=Documentation&amp;fileExt=.gz&amp;Parent_nodeId=1276810298241720831102&amp;Parent_pageType=product">L4.1.15_1.0.0_LINUX_DOCS</a> on <a href="http://nxp.com">nxp.com</a> for details on host set-up and installation.</p>
+<p>Set up BitBake for the i.MX6UL build environment:</p>
+<pre><code>$ cd ~/training/yocto/
+$ source setup-environment build_ul/</code></pre>
+<p>Build the image:</p>
+<pre><code>$ bitbake -c clean training-image
+$ bitbake training-image</code></pre>
+<p>Inspect files generated under <code>build_ul/tmp/deploy/images/imx6ulevk/</code>.</p>
+<h2 id="deployment-and-installing-modules"><span class="header-section-number">5.4</span> Deployment and installing modules</h2>
+<p>In its default configuration, Yocto creates a full SD card image, which can be flashed onto the card starting at address 0. In this tutorial, we are using u-boot and kernel built in separate source trees.</p>
+<p>First, mount the rootfs partition:</p>
+<p><code>$ sudo mount /dev/sdb2 /mnt/sdcard</code></p>
+<p><strong>Note:</strong> Make sure you do not have the device mounted in the file manager.</p>
+<p>Extract the file system onto the newly mounted partition:</p>
+<pre><code>$ cd /mnt/sdcard/
+$ sudo tar -xvf ~/training/yocto/build_ul/tmp/deploy/images/imx6ulevk/training-image-imx6ulevk.tar.gz -C /mnt/sdcard/</code></pre>
+<p>Copy the modules:</p>
+<pre><code>$ cd ~/training/linux-2.6-modules/
+$ sudo cp -R lib/modules /mnt/sdcard/lib/</code></pre>
+<p>You can also use the file manager.</p>
+<p>Remember to umount the SD card before removing it from the system:</p>
+<p><code>$ sudo umount /mnt/sdcard</code></p>
+<h1 id="first-boot"><span class="header-section-number">6</span> First boot</h1>
+<p>You can now remove the SD card from the reader and insert it into the SD card slot on i.MX6UL EVK.</p>
+<div class="figure">
+<img src="MCIMX6UL-EVK-BD_M.jpg" />
+</div>
+<p>Connect a microUSB cable to the Power + Console port. Open a serial console on your PC:</p>
+<p><code>$ sudo picocom -b 115200 /dev/ttyUSB0</code></p>
+<p>Use <code>Ctrl</code> + <code>a</code>, <code>Ctrl</code> + <code>x</code> to exit <code>picocom</code>.</p>
+<p>After you flip the power switch, you should see the board booting up into Linux. Log in as 'root', no password.</p>
+<p><strong>If, for any reason, your board does not boot up and you would like to continue with the training:</strong></p>
+<pre><code>$ cd ~/training/files
+$ sudo dd if=sdcard.img of=/dev/sdb bs=1M</code></pre>
+<h1 id="communication-interfaces"><span class="header-section-number">7</span> Communication interfaces</h1>
+<h2 id="ethernet"><span class="header-section-number">7.1</span> Ethernet</h2>
+<p>Connect your PC to the eth0 port on the EVK, with the Ethernet cable provided. The network connection should already be set up in the system. The IP address of the PC is <code>192.168.8.1</code>, and the EVK has address <code>192.168.8.2</code>.</p>
+<p>You can check connectivity with <code>ping &lt;ip address&gt;</code>, or by navigating your browser to <a href="http://192.168.8.2/">http://192.168.8.2/</a>.</p>
+<h2 id="usb-gadget"><span class="header-section-number">7.2</span> USB Gadget</h2>
+<p>The Linux kernel implements USB gadget drivers, which use the OTG controller in device mode. One of these drivers is g_ether, which implements an Ethernet link over USB.</p>
+<p>Issue the following commands over the serial console:</p>
+<pre><code># modprobe g_ether
+# ifup usb0</code></pre>
+<p>Over USB, the PC has address <code>192.168.7.1</code>, and the board <code>192.168.7.2</code>.</p>
+<h2 id="i2c-accelerometer"><span class="header-section-number">7.3</span> I2C: Accelerometer</h2>
+<p>The fxls8471 accelerometer driver exposes a simple file interface in sysfs:</p>
+<pre><code># echo 1 &gt; /sys/devices/virtual/misc/FreescaleAccelerometer/enable
+# cat /sys/devices/virtual/misc/FreescaleAccelerometer/data
+512,-152,-16128</code></pre>
+<h2 id="remote-debugging"><span class="header-section-number">7.4</span> Remote debugging</h2>
+<p>Before you start debugging, create the directory <code>/srv/node/</code> where the debugged binary file will be loaded by default:</p>
+<p><code># mkdir /srv/node</code></p>
+<p>We will use the on-board mag3110 magnetometer to demonstrate how a simple driver can be created in userspace, using Eclipse IDE with the Yocto plug-in to cross-compile and debug an application.</p>
+<p>The project has been pre-configured in Eclipse for debugging over the Ethernet interface. In order to debug through the USB link, change the IP address to <code>192.168.7.2</code>. Click <em>Run</em> → <em>Debug Configurations...</em>, then <em>Edit...</em> next to the <em>Connection</em> field in the <em>Main</em> tab.</p>
+<p>Once you have the board connected, select <em>mag3110_gdb_arm-poky-linux-gnueabi</em> from the drop-down menu, next to the <em>Debug</em> bug icon. You can now step through the application, set breakpoints, observe the console output, etc.</p>
+<div class="figure">
+<img src="eclipse-debug.png" />
+</div>
+<p>Read more about Yocto ADT and using Eclipse with Yocto in the <a href="http://www.yoctoproject.org/docs/latest/adt-manual/adt-manual.html">Yocto Project Application Developer's Guide</a></p>
+<h1 id="running-web-applications"><span class="header-section-number">8</span> Running web applications</h1>
+<h2 id="preparation-accessing-the-filesystem-remotely"><span class="header-section-number">8.1</span> Preparation: accessing the filesystem remotely</h2>
+<p>In addition to the serial console, you can access the target system through ssh:</p>
+<p><code>$ ssh root@192.168.7.2</code></p>
+<p>You may need to edit or delete the <code>~/.ssh/known_hosts</code> file if you connected to the target, and then re-flashed the card. This is because the public-private key pairs used for authentication are re-created on first boot.</p>
+<p>It is also possible to copy files to and from the target:</p>
+<pre><code>$ scp test.txt root@192.168.7.2:/home/root
+$ scp root@192.168.7.2:/home/root/test.txt .</code></pre>
+<p>You can also use the file manager, Caja, to connect to remote systems over ssh, and browse their files. Go to <em>File</em> → <em>Connect to Server...</em>, and set up the connection as shown below.</p>
+<div class="figure">
+<img src="caja-ssh.png" />
+</div>
+<p>Again, if you wish to use Ethernet, replace <code>192.168.7.2</code> with <code>192.168.8.2</code>.</p>
+<p>Navigate to <code>/srv/</code> in the target system, and remove all the files from <code>/srv/www</code>. Copy all files from <code>~/training/mediademo/node/</code> and <code>~/training/mediademo/www/</code> on the PC, to <code>/srv/node/</code> and <code>/srv/www</code> on the target system.</p>
+<p>Change access rights to the files in <code>/srv/www</code>:</p>
+<p><code># chmod a+r /srv/www/*</code></p>
+<p>This allows every user in the system (including the http server) to read the files.</p>
+<p>While the http server (sthttpd, <a href="http://opensource.dyc.edu/sthttpd">Supported</a> - <a href="http://www.acme.com/software/thttpd/">Tiny/Turbo/Throttling HTTP Server</a>) is running on boot, you will need to start the <a href="http://nodejs.org">node.js</a> applcation server manually:</p>
+<pre><code># cd /srv/node
+# chmod a+x setup.sh
+# ./setup.sh
+# node stream.js</code></pre>
+<p>If you have not finished the <a href="#remote-debugging">Remote debugging</a> step, you will also need to copy the <code>mag3110</code> executable from <code>~/training/mag3110/</code> to <code>/srv/node</code> on the target system.</p>
+<h2 id="sensors"><span class="header-section-number">8.2</span> Sensors</h2>
+<p>You can now access accelerometer and magnetometer data through <a href="http://192.168.7.2:8080/imu">http://192.168.7.2:8080/imu</a>.</p>
+<p>There is an HTML5 webpage demonstrating accelerometer and magnetometer data in 3D at <a href="http://192.168.7.2/sensors.html">http://192.168.7.2/sensors.html</a>.</p>
+<h2 id="audio-streaming"><span class="header-section-number">8.3</span> Audio streaming</h2>
+<p>The same node.js application can be used to stream audio from the on-board microphone with a (browser-enforced) delay of 10s for buffering. The stream is available at <a href="http://192.168.7.2:8080">http://192.168.7.2:8080</a>.</p>
+<p>At <a href="http://192.168.7.2/index.html">http://192.168.7.2/index.html</a> there is an HTML5 page with a spectrum analyser for the streamed audio.</p>
+<p>The application uses <code>arecord</code> to record the PCM audio data, and encodes it with <code>oggenc</code> to create an ogg/vorbis stream. Ogg/Vorbis is a free and open alternative to the MP3 format.</p>
+<h1 id="power-saving"><span class="header-section-number">9</span> Power saving</h1>
+<p>i.MX6 BSP supports two suspend states, with configurable wake-up events:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Mode</th>
+<th align="left">CPU</th>
+<th align="left">DRAM</th>
+<th align="left">Peripherals</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">normal</td>
+<td align="left">RUN</td>
+<td align="left">on</td>
+<td align="left">on</td>
+</tr>
+<tr class="even">
+<td align="left">standby</td>
+<td align="left">STOP</td>
+<td align="left">self-refresh</td>
+<td align="left">powered down</td>
+</tr>
+<tr class="odd">
+<td align="left">mem</td>
+<td align="left">power-gate</td>
+<td align="left">self-refresh</td>
+<td align="left">powered down</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><em>standby</em>, which powers down all peripherals, puts the CPU in STOP mode (but still powered on), and puts the DRAM in self-refresh mode.</li>
+<li><em>mem</em>, which powers down the CPU and all peripherals, and puts the DRAM in self-refresh mode.</li>
+</ul>
+<p>First, have the console UART wake up the system:</p>
+<pre><code># echo enabled &gt; /sys/bus/platform/drivers/imx-uart/2020000.serial/tty/ttymxc0/power/wakeup</code></pre>
+<p>To put i.MX6UL in one of the power-save states:</p>
+<pre><code># echo mem &gt; /sys/power/state
+# echo standby &gt; /sys/power/state</code></pre>
+<h1 id="usb-booting"><span class="header-section-number">10</span> USB Booting</h1>
+<p>It is possible to boot i.MX6-series processors via the USB OTG interface, with the target board connected to a PC. The USB/Serial Download mode is enabled if <code>BOOT_MODE[1:0]</code> pins are set to <code>01</code>, or if primary boot device fails.</p>
+<p>NXP provides a free, Windows-based tool to automate production programming of Flash memories in an i.MX-based system, called <a href="http://www.nxp.com/download/lgfiles/bsps/L4.1.15_1.0.0_ga-mfg-tools.tar.gz">mfgtool</a>, or <em>Manufacturing Tool</em>. There is another tool for Linux, <code>imx_usb_loader</code>, available at <a href="https://github.com/boundarydevices/imx_usb_loader">https://github.com/boundarydevices/imx_usb_loader</a>.</p>
+<p><code>imx_usb_loader</code> uses <code>imx_usb.conf</code> to identify which device configuration file to use with which USB VID:PID pair. Then, the device configuration specifies which files should be loaded into DRAM. See <code>configs/6ul.conf</code></p>
+<p>In order to boot i.MX6UL using <code>imx_usb_loader</code>, connect both USB cables and issue:</p>
+<pre><code>$ cd ~/training/imx_usb_loader
+$ sudo ./imx_usb</code></pre>
+<h1 id="qa"><span class="header-section-number">11</span> Q&amp;A</h1>
+</body></html>
+

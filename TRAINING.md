@@ -46,6 +46,8 @@ Contents {-}
 	1. [Sensors]
 	1. [Audio streaming]
 
+#. [USB Booting]
+
 #. [Q&amp;A]
 
 

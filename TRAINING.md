@@ -223,7 +223,7 @@ $ source /opt/fsl-imx-x11/4.1.15-1.0.0/environment-setup-cortexa7hf-vfp-neon-pok
 
 **Note:** You can see how to create a toolchain using yocto on [Appendix]
 
-This sets the environment variables for the `make` utility to use the cross-toolchain.
+This sets the environment variables for the `make` utility to use the cross-compiler.
 
 A configuration must be selected to build for a specific board:
 

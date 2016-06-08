@@ -173,7 +173,7 @@ The u-boot image includes a boot header, which BootROM uses to determine the loa
 
 u-boot sources are located at `~/training/uboot-imx`.
 
-**Note:** You can see how to download u-boot source code on [Appendix]
+**Note:** You can see how to download u-boot source code in the [Appendix].
 
 In the default configuration for i.MX6UL EVK, u-boot expects to see the SD card it has booted from in the microSD card holder on the CPU daughter card (SD2). Because we are using the full-size SD slot on the baseboard (SD1), the default configuration has been modified.
 
@@ -221,7 +221,7 @@ A cross-compiler is necessary to build binaries for a different architecture. In
 $ source /opt/fsl-imx-x11/4.1.15-1.0.0/environment-setup-cortexa7hf-vfp-neon-poky-linux-gnueabi
 ```
 
-**Note:** You can see how to create a toolchain using yocto on [Appendix]
+**Note:** You can see how to create a toolchain using yocto in the [Appendix].
 
 This sets the environment variables for the `make` utility to use the cross-compiler.
 
@@ -398,7 +398,7 @@ Inspect files generated under `build_ul/tmp/deploy/images/imx6ulevk/`.
 
 ## Deployment and installing modules
 
-In its default configuration, Yocto creates a full SD card image, which can be flashed onto the card starting at address 0. In this tutorial, we are using u-boot and kernel already copied to SDCard on previous sections [u-boot deployment] and [Kernel deployment] , and only the rootfs created by Yocto Project as a `.tar.gz` image.
+In its default configuration, Yocto creates a full SD card image, which can be flashed onto the card starting at address 0. In this tutorial, we are using u-boot and kernel already copied to SD card on previous sections [u-boot deployment] and [Kernel deployment] , and only the rootfs created by Yocto Project as a `.tar.gz` image.
 
 First, mount the rootfs partition:
 
@@ -607,6 +607,12 @@ The source repository can be cloned with the following command:
 $ git clone git://git.freescale.com/imx/uboot-imx.git -b imx_v2015.04_4.1.15_1.0.0_ga
 ```
 
+## Linux kernel
+
+The source repository can be cloned with the following command:
+
+`$ git clone git://git.freescale.com/imx/linux-2.6-imx.git -b imx_4.1.15_1.0.0_ga` 
+
 ## Toolchain
 
 Using the Yocto Project folder you are working with you can create a toolchain with the following command line:
@@ -615,10 +621,5 @@ Using the Yocto Project folder you are working with you can create a toolchain w
 $ bitbake core-image-base -c populate_sdk
 ```
 
-At the end of the `BitBake` execution, the toolchain installer is in `<build-dir>tmp/deploy/sdk` and can be executed as an script.
+At the end of the `BitBake` execution, the toolchain installer is in `<build-dir>tmp/deploy/sdk` and can be executed as a script.
 
-## Linux kernel
-
-The source repository can be cloned with the following command:
-
-`$ git clone git://git.freescale.com/imx/linux-2.6-imx.git -b imx_4.1.15_1.0.0_ga` 

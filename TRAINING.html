@@ -38,7 +38,7 @@
 </ol></li>
 <li><a href="#root-filesystem">Root filesystem</a>
 <ol style="list-style-type: decimal">
-<li><a href="#yocto-introduction">Yocto introduction</a></li>
+<li>[Yocto introduction]</li>
 <li><a href="#meta-layers-and-recipes">Meta layers and recipes</a></li>
 <li><a href="#generating-the-root-filesystem">Generating the root filesystem</a></li>
 <li><a href="#deployment-and-installing-modules">Deployment and installing modules</a></li>
@@ -172,8 +172,7 @@ $ mkfs.ext3 /dev/sdb2 -L rootfs</code></pre>
 <p>The u-boot image includes a boot header, which BootROM uses to determine the load address, load size, and optional boot security.</p>
 <h2 id="configuring-u-boot"><span class="header-section-number">3.2</span> Configuring u-boot</h2>
 <p>u-boot sources are located at <code>~/training/uboot-imx</code>.</p>
-<p>The source repository can be cloned with the following command:</p>
-<pre><code>$ git clone git://git.freescale.com/imx/uboot-imx.git -b imx_v2015.04_4.1.15_1.0.0_ga</code></pre>
+<p><strong>Note:</strong> You can see how to download u-boot source code on <a href="#appendix">Appendix</a></p>
 <p>In the default configuration for i.MX6UL EVK, u-boot expects to see the SD card it has booted from in the microSD card holder on the CPU daughter card (SD2). Because we are using the full-size SD slot on the baseboard (SD1), the default configuration has been modified.</p>
 <p>A local git branch has been created to implement these changes.</p>
 <pre><code>$ cd ~/training/uboot-imx
@@ -202,11 +201,12 @@ index edeac03..87d5a1c 100644
  
  #define CONFIG_OF_LIBFDT
  #define CONFIG_CMD_BOOTZ</code></pre>
-<p>If there are any changes to the code and you get an error message when trying to check out, you can discard the changes with <code>git reset --hard ex1</code>. Normally, you would commit the chagned code and then use <code>git checkout ex1</code> instead.</p>
+<p>The command <code>git reset --hard ex1</code> forces git to point the files to the top of branch <code>ex1</code> removing <strong>any</strong> change without a trace. You can also discard changes in one file only (and keep others) by <code>git checkout &lt;file-name&gt;</code>. In case you want to keep all changes, you should commit those changes with <code>git commit -a -m &quot;Add my change&quot;</code>.</p>
 <h2 id="building-u-boot"><span class="header-section-number">3.3</span> Building u-boot</h2>
-<p>A cross-compiler is necessary to build binaries for a different architecture. We will use the cross-compiling toolchan is installed in <code>/opt/fsl-imx-x11/4.1.15-1.0.0/</code>:</p>
+<p>A cross-compiler is necessary to build binaries for a different architecture. In this training we use the cross-compiler installed in <code>/opt/fsl-imx-x11/4.1.15-1.0.0/</code>:</p>
 <pre><code>$ source /opt/fsl-imx-x11/4.1.15-1.0.0/environment-setup-cortexa7hf-vfp-neon-poky-linux-gnueabi</code></pre>
-<p>This sets the environment variables for the <code>make</code> utility to use the cross-toolchain.</p>
+<p><strong>Note:</strong> You can see how to create a toolchain using yocto on <a href="#appendix">Appendix</a></p>
+<p>This sets the environment variables for the <code>make</code> utility to use the cross-compiler.</p>
 <p>A configuration must be selected to build for a specific board:</p>
 <p><code>$ make mx6ul_14x14_evk_defconfig</code></p>
 <p>You can see the list of valid configurations in the <code>configs/</code> directory.</p>
@@ -216,14 +216,13 @@ index edeac03..87d5a1c 100644
 <li><code>-j4</code> means <code>make</code> will run at most 4 tasks concurrently, instead of just one.</li>
 </ul>
 <h2 id="u-boot-deployment"><span class="header-section-number">3.4</span> u-boot deployment</h2>
-<p>When partitioning with <code>fdisk</code>, we left some space before the first partition. We will now copy u-boot.imx directly onto that space:</p>
+<p>When partitioning with <code>fdisk</code>, we left some space before the first partition. We will now copy <code>u-boot.imx</code> directly onto that space:</p>
 <p><code>$ sudo dd if=u-boot.imx of=/dev/sdb bs=512 seek=2</code></p>
 <p><code>dd</code> is a low-level copy utility. Here, we copy <code>u-boot.imx</code> onto the SD card, in 512-byte blocks, and we start at block 2 (1 KB offset). This offset is necessary for storing the boot block and partition table of the device.</p>
 <h1 id="linux-kernel"><span class="header-section-number">4</span> Linux kernel</h1>
 <h2 id="configuring-the-kernel"><span class="header-section-number">4.1</span> Configuring the kernel</h2>
 <p>Linux kernel source tree is located at <code>~/training/linux-2.6-imx</code>.</p>
-<p>The source repository can be cloned with the following command:</p>
-<p><code>$ git clone git://git.freescale.com/imx/linux-2.6-imx.git -b imx_4.1.15_1.0.0_ga</code></p>
+<p><strong>Note:</strong> You can see how to download Linux kernel source code on <a href="#appendix">Appendix</a></p>
 <p>The repository name is kept for historic reasons, the latest release at the time of writing is 4.1.15.</p>
 <p>In one of the following exercises, we will be using the on-board magnetometer (NXP MAG3110) with a userspace driver. In order to avoid conflicts on the I2C bus, the magnetometer has been disabled. We will disable the magnetometer by modifying the Linux Device Tree.</p>
 <p>The Device Tree is a data structure for describing hardware. Rather than hard coding every detail of a device into an operating system, many aspect of the hardware can be described in a data structure that is loaded into RAM before kernel starts.</p>
@@ -264,7 +263,7 @@ index 430da40..5d323d3 100644
 <p>You can access a configuration interface to modify the configuration by issuing:</p>
 <p><code>$ make menuconfig</code></p>
 <p>For example, later in the training we will be using the USB Ethernet Gadget driver, which is enabled by <em>Device Drivers</em> → <em>USB support</em> → <em>USB Gadget Support</em> → <em>Ethernet Gadget (with CDC Ethernet support)</em>. <code>&lt;M&gt;</code> denotes that it will be built as a loadable kernel module, as opposed to being linked into the kernel binary.</p>
-<p>Now, build the compressed kernel image, modules and flattened devce tree files:</p>
+<p>Now, build the compressed kernel image, modules and flattened device tree files:</p>
 <p><code>$ make -j4 zImage modules dtbs</code></p>
 <p>The modules are now located at various places in the source tree. To place them in a single directory, which can later be deployed:</p>
 <pre><code>$ rm -R ../linux-2.6-modules/lib
@@ -276,9 +275,9 @@ $ INSTALL_MOD_PATH=../linux-2.6-modules/ make modules_install</code></pre>
 <li><code>arch/arm/boot/dts/imx6ul-14x14-evk.dtb</code></li>
 </ul>
 <h1 id="root-filesystem"><span class="header-section-number">5</span> Root filesystem</h1>
-<h2 id="yocto-introduction"><span class="header-section-number">5.1</span> Yocto introduction</h2>
+<h2 id="yocto-project-introduction"><span class="header-section-number">5.1</span> Yocto Project introduction</h2>
 <p>The Yocto Project is an open source collaboration project that provides templates, tools and methods to help you create custom Linux-based systems for embedded products regardless of the hardware architecture.</p>
-<p>Among other things, the Yocto Project uses a build host based on the OpenEmbedded (OE) project, which uses the BitBake tool, to construct complete Linux images.</p>
+<p>Among other things, the Yocto Project uses a build system based on the OpenEmbedded (OE) project, and the BitBake tool as the task executer and scheduler to construct complete Linux images.</p>
 <div class="figure">
 <img src="yocto-environment-ref.png" />
 </div>
@@ -286,10 +285,10 @@ $ INSTALL_MOD_PATH=../linux-2.6-modules/ make modules_install</code></pre>
 <p><a href="http://www.yoctoproject.org/docs/2.0/ref-manual/ref-manual.html#intro-welcome">Yocto Project Reference Manual</a></p>
 <p><a href="http://www.yoctoproject.org/docs/2.0/dev-manual/dev-manual.html">Yocto Project Development Manual</a></p>
 <h2 id="meta-layers-and-recipes"><span class="header-section-number">5.2</span> Meta layers and recipes</h2>
-<p>Files that have the .bb suffix are &quot;recipe&quot; files. In general, a recipe contains information about a single piece of software. This information includes the location from which to download the unaltered source, any source patches to be applied to that source (if needed), which special configuration options to apply, how to compile the source files, and how to package the compiled output. For image recipes, the recipe defines which packages are to be installed on the target systems, what features are required, how large the filesystem image should be, etc.</p>
-<p>Recipes can be extended or overridden by append files (.bbappend). Doing so isolates your changes from the main recipe, making them much more manageable.</p>
-<p>Recipes are organised into meta layers. Layers make it possible to keep new recipes and changes to existing ones, in one place. Meta layers are supplied by silicon vendors (e.g. meta-fsl-arm) to support a hardware platform, or the community (meta-openembedded) for base system and generic software packages, or software providers (meta-qt5).</p>
-<p>A new layer was created for this training, meta-training. It contains one image recipe, called &quot;training-image&quot;, and two apend files to modify network device configuration and build options for vorbis-tools.</p>
+<p>Files that have the <code>.bb</code> suffix are &quot;recipe&quot; files. In general, a recipe contains information about a single piece of software. This information includes the location from which to download the unaltered source, any source patches to be applied to that source (if needed), special configuration options to apply, how to compile the source files, and how to package the compiled output. For image recipes, the recipe defines which packages are to be installed on the target systems, what features are required, how large the filesystem image should be, etc.</p>
+<p>Recipes can be extended or overridden by append files (<code>.bbappend</code>). Doing so isolates your changes from the main recipe, making them much more manageable and scalable.</p>
+<p>Recipes are organized into meta layers which keep the new recipes and changes to existing ones (via <code>.bbappend</code>), in one place. Meta layers may be supplied by silicon vendors (e.g. <code>meta-fsl-arm</code>) to support a hardware platform, or the community (<code>meta-openembedded</code>) for base system and generic software packages, or software providers (<code>meta-qt5</code>).</p>
+<p>A new layer was created for this training, <code>meta-training</code>. It contains one image recipe, called &quot;training-image&quot;, and two append files to modify network device configuration and build options for vorbis-tools.</p>
 <pre><code>meta-training
 ├── conf/
 │   └── layer.conf
@@ -313,7 +312,7 @@ $ source setup-environment build_ul/</code></pre>
 $ bitbake training-image</code></pre>
 <p>Inspect files generated under <code>build_ul/tmp/deploy/images/imx6ulevk/</code>.</p>
 <h2 id="deployment-and-installing-modules"><span class="header-section-number">5.4</span> Deployment and installing modules</h2>
-<p>In its default configuration, Yocto creates a full SD card image, which can be flashed onto the card starting at address 0. In this tutorial, we are using u-boot and kernel built in separate source trees.</p>
+<p>In its default configuration, Yocto creates a full SD card image, which can be flashed onto the card starting at address 0. In this tutorial, we are using u-boot and kernel already copied to SDCard on previous sections <a href="#u-boot-deployment">u-boot deployment</a> and <a href="#kernel-deployment">Kernel deployment</a> , and only the rootfs created by Yocto Project as a <code>.tar.gz</code> image.</p>
 <p>First, mount the rootfs partition:</p>
 <p><code>$ sudo mount /dev/sdb2 /mnt/sdcard</code></p>
 <p><strong>Note:</strong> Make sure you do not have the device mounted in the file manager.</p>
@@ -442,5 +441,16 @@ $ scp root@192.168.7.2:/home/root/test.txt .</code></pre>
 <pre><code>$ cd ~/training/imx_usb_loader
 $ sudo ./imx_usb</code></pre>
 <h1 id="qa"><span class="header-section-number">11</span> Q&amp;A</h1>
+<h1 id="appendix"><span class="header-section-number">12</span> Appendix</h1>
+<h2 id="u-boot-1"><span class="header-section-number">12.1</span> u-boot</h2>
+<p>The source repository can be cloned with the following command:</p>
+<pre><code>$ git clone git://git.freescale.com/imx/uboot-imx.git -b imx_v2015.04_4.1.15_1.0.0_ga</code></pre>
+<h2 id="toolchain"><span class="header-section-number">12.2</span> Toolchain</h2>
+<p>Using the Yocto Project folder you are working with you can create a toolchain with the following command line:</p>
+<pre><code>$ bitbake core-image-base -c populate_sdk</code></pre>
+<p>At the end of the <code>BitBake</code> execution, the toolchain installer is in <code>&lt;build-dir&gt;tmp/deploy/sdk</code> and can be executed as an script.</p>
+<h2 id="linux-kernel-1"><span class="header-section-number">12.3</span> Linux kernel</h2>
+<p>The source repository can be cloned with the following command:</p>
+<p><code>$ git clone git://git.freescale.com/imx/linux-2.6-imx.git -b imx_4.1.15_1.0.0_ga</code></p>
 </body></html>
 

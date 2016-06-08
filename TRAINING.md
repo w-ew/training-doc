@@ -221,6 +221,8 @@ A cross-compiler is necessary to build binaries for a different architecture. In
 $ source /opt/fsl-imx-x11/4.1.15-1.0.0/environment-setup-cortexa7hf-vfp-neon-poky-linux-gnueabi
 ```
 
+**Note:** You can see how to create a toolchain using yocto on [Appendix]
+
 This sets the environment variables for the `make` utility to use the cross-toolchain.
 
 A configuration must be selected to build for a specific board:
@@ -606,3 +608,13 @@ The source repository can be cloned with the following command:
 ```
 $ git clone git://git.freescale.com/imx/uboot-imx.git -b imx_v2015.04_4.1.15_1.0.0_ga
 ```
+
+## Toolchain
+
+Using the Yocto Project folder you are working with you can create a toolchain with the following command line:
+
+```
+$ bitbake core-image-base -c populate_sdk
+```
+
+At the end of the `BitBake` execution, the toolchain installer is in `<build-dir>tmp/deploy/sdk` and can be executed as an script.

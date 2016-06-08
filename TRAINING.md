@@ -250,9 +250,7 @@ When partitioning with `fdisk`, we left some space before the first partition. W
 
 Linux kernel source tree is located at `~/training/linux-2.6-imx`. 
 
-The source repository can be cloned with the following command:
-
-`$ git clone git://git.freescale.com/imx/linux-2.6-imx.git -b imx_4.1.15_1.0.0_ga` 
+**Note:** You can see how to download Linux kernel source code on [Appendix]
 
 The repository name is kept for historic reasons, the latest release at the time of writing is 4.1.15.
 
@@ -618,3 +616,9 @@ $ bitbake core-image-base -c populate_sdk
 ```
 
 At the end of the `BitBake` execution, the toolchain installer is in `<build-dir>tmp/deploy/sdk` and can be executed as an script.
+
+## Linux kernel
+
+The source repository can be cloned with the following command:
+
+`$ git clone git://git.freescale.com/imx/linux-2.6-imx.git -b imx_4.1.15_1.0.0_ga` 

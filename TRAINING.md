@@ -219,7 +219,7 @@ The command `git reset --hard ex1` forces git to point the files to the top of b
 
 ## Building u-boot
 
-A cross-compiler is necessary to build binaries for a different architecture. We will use the cross-compiling toolchan is installed in `/opt/fsl-imx-x11/4.1.15-1.0.0/`:
+A cross-compiler is necessary to build binaries for a different architecture. In this training we use the cross-compiler installed in `/opt/fsl-imx-x11/4.1.15-1.0.0/`:
 
 ```
 $ source /opt/fsl-imx-x11/4.1.15-1.0.0/environment-setup-cortexa7hf-vfp-neon-poky-linux-gnueabi

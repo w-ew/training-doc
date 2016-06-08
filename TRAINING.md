@@ -334,11 +334,11 @@ Copy the following files onto the `boot` partition of the SD card:
 
 # Root filesystem
 
-## Yocto introduction
+## Yocto Project introduction
 
 The Yocto Project is an open source collaboration project that provides templates, tools and methods to help you create custom Linux-based systems for embedded products regardless of the hardware architecture.
 
-Among other things, the Yocto Project uses a build host based on the OpenEmbedded (OE) project, which uses the BitBake tool, to construct complete Linux images.
+Among other things, the Yocto Project uses a build system based on the OpenEmbedded (OE) project, and the BitBake tool as the task executer and scheduler to construct complete Linux images.
 
 ![](yocto-environment-ref.png)
 
@@ -350,13 +350,13 @@ Read more:
 
 ## Meta layers and recipes
 
-Files that have the .bb suffix are "recipe" files. In general, a recipe contains information about a single piece of software. This information includes the location from which to download the unaltered source, any source patches to be applied to that source (if needed), which special configuration options to apply, how to compile the source files, and how to package the compiled output. For image recipes, the recipe defines which packages are to be installed on the target systems, what features are required, how large the filesystem image should be, etc.
+Files that have the `.bb` suffix are "recipe" files. In general, a recipe contains information about a single piece of software. This information includes the location from which to download the unaltered source, any source patches to be applied to that source (if needed), special configuration options to apply, how to compile the source files, and how to package the compiled output. For image recipes, the recipe defines which packages are to be installed on the target systems, what features are required, how large the filesystem image should be, etc.
 
-Recipes can be extended or overridden by append files (.bbappend). Doing so isolates your changes from the main recipe, making them much more manageable.
+Recipes can be extended or overridden by append files (`.bbappend`). Doing so isolates your changes from the main recipe, making them much more manageable and scalable.
 
-Recipes are organized into meta layers. Layers make it possible to keep new recipes and changes to existing ones, in one place. Meta layers are supplied by silicon vendors (e.g. meta-fsl-arm) to support a hardware platform, or the community (meta-openembedded) for base system and generic software packages, or software providers (meta-qt5).
+Recipes are organized into meta layers which keep the new recipes and changes to existing ones (via `.bbappend`), in one place. Meta layers may be supplied by silicon vendors (e.g. `meta-fsl-arm`) to support a hardware platform, or the community (`meta-openembedded`) for base system and generic software packages, or software providers (`meta-qt5`).
 
-A new layer was created for this training, meta-training. It contains one image recipe, called "training-image", and two apend files to modify network device configuration and build options for vorbis-tools.
+A new layer was created for this training, `meta-training`. It contains one image recipe, called "training-image", and two append files to modify network device configuration and build options for vorbis-tools.
 
 ```
 meta-training
@@ -398,7 +398,7 @@ Inspect files generated under `build_ul/tmp/deploy/images/imx6ulevk/`.
 
 ## Deployment and installing modules
 
-In its default configuration, Yocto creates a full SD card image, which can be flashed onto the card starting at address 0. In this tutorial, we are using u-boot and kernel built in separate source trees.
+In its default configuration, Yocto creates a full SD card image, which can be flashed onto the card starting at address 0. In this tutorial, we are using u-boot and kernel already copied to SDCard on previous sections [u-boot deployment] and [Kernel deployment] , and only the rootfs created by Yocto Project as a `.tar.gz` image.
 
 First, mount the rootfs partition:
 

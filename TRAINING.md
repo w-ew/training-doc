@@ -238,7 +238,7 @@ You can see the list of valid configurations in the `configs/` directory.
 
 ## u-boot deployment
 
-When partitioning with `fdisk`, we left some space before the first partition. We will now copy u-boot.imx directly onto that space:
+When partitioning with `fdisk`, we left some space before the first partition. We will now copy `u-boot.imx` directly onto that space:
 
 `$ sudo dd if=u-boot.imx of=/dev/sdb bs=512 seek=2`
 

@@ -314,7 +314,7 @@ You can access a configuration interface to modify the configuration by issuing:
 
 For example, later in the training we will be using the USB Ethernet Gadget driver, which is enabled by *Device Drivers* → *USB support* → *USB Gadget Support* → *Ethernet Gadget (with CDC Ethernet support)*. `<M>` denotes that it will be built as a loadable kernel module, as opposed to being linked into the kernel binary.
 
-Now, build the compressed kernel image, modules and flattened devce tree files:
+Now, build the compressed kernel image, modules and flattened device tree files:
 
 `$ make -j4 zImage modules dtbs`
 
@@ -354,7 +354,7 @@ Files that have the .bb suffix are "recipe" files. In general, a recipe contains
 
 Recipes can be extended or overridden by append files (.bbappend). Doing so isolates your changes from the main recipe, making them much more manageable.
 
-Recipes are organised into meta layers. Layers make it possible to keep new recipes and changes to existing ones, in one place. Meta layers are supplied by silicon vendors (e.g. meta-fsl-arm) to support a hardware platform, or the community (meta-openembedded) for base system and generic software packages, or software providers (meta-qt5).
+Recipes are organized into meta layers. Layers make it possible to keep new recipes and changes to existing ones, in one place. Meta layers are supplied by silicon vendors (e.g. meta-fsl-arm) to support a hardware platform, or the community (meta-openembedded) for base system and generic software packages, or software providers (meta-qt5).
 
 A new layer was created for this training, meta-training. It contains one image recipe, called "training-image", and two apend files to modify network device configuration and build options for vorbis-tools.
 

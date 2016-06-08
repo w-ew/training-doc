@@ -50,6 +50,7 @@ Contents {-}
 
 #. [Q&amp;A]
 
+#. [Appendix]
 
 # Introduction
 
@@ -597,6 +598,8 @@ $ sudo ./imx_usb
 
 # Q&amp;A
 
+&nbsp;
+
 # Appendix
 
 ## u-boot
@@ -615,11 +618,15 @@ The source repository can be cloned with the following command:
 
 ## Toolchain
 
-Using the Yocto Project folder you are working with you can create a toolchain with the following command line:
+Using the Yocto Project you can build an SDK with the following command line:
 
 ```
 $ bitbake core-image-base -c populate_sdk
 ```
 
-At the end of the `BitBake` execution, the toolchain installer is in `<build-dir>tmp/deploy/sdk` and can be executed as a script.
+The SDK contains the cross-compiling toolchain and all libraries present in the specified system image. Having the libraries makes it possible to build Linux applications fully compatible with the target system.
+
+The SDK has to be installed on the development system, usually somewhere in `/opt`. The installer is located in `<build-dir>tmp/deploy/sdk`. Yocto SDK is used independently from the Yocto BSP installation, and can be used on a different machine.
+
+
 

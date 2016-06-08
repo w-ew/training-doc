@@ -215,7 +215,7 @@ index edeac03..87d5a1c 100644
  #define CONFIG_CMD_BOOTZ
 ```
 
-If there are any changes to the code and you get an error message when trying to check out, you can discard the changes with `git reset --hard ex1`. Normally, you would commit the chagned code and then use `git checkout ex1` instead.
+If there are any changes to the code and you get an error message when trying to check out, you can discard the changes with `git reset --hard ex1`. Normally, you would commit the changed code and then use `git checkout ex1` instead.
 
 ## Building u-boot
 

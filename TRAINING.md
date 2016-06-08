@@ -173,11 +173,7 @@ The u-boot image includes a boot header, which BootROM uses to determine the loa
 
 u-boot sources are located at `~/training/uboot-imx`.
 
-The source repository can be cloned with the following command:
-
-```
-$ git clone git://git.freescale.com/imx/uboot-imx.git -b imx_v2015.04_4.1.15_1.0.0_ga
-```
+**Note:** You can see how to download u-boot source code on [Appendix]
 
 In the default configuration for i.MX6UL EVK, u-boot expects to see the SD card it has booted from in the microSD card holder on the CPU daughter card (SD2). Because we are using the full-size SD slot on the baseboard (SD1), the default configuration has been modified.
 
@@ -600,3 +596,13 @@ $ sudo ./imx_usb
 ```
 
 # Q&amp;A
+
+# Appendix
+
+## u-boot
+
+The source repository can be cloned with the following command:
+
+```
+$ git clone git://git.freescale.com/imx/uboot-imx.git -b imx_v2015.04_4.1.15_1.0.0_ga
+```

@@ -12,6 +12,7 @@ Contents {-}
 
 #. [i.MX Boot Process]
 	1. [Boot introduction]
+	1. [Card preparation]
 	1. [Partitioning]
 	1. [File system creation]
 
@@ -125,6 +126,35 @@ Full source code for u-boot and Linux is available at <http://git.freescale.com>
 
 ![](git_freescale_com.png)
 
+## Card preparation
+
+In Linux, every block device and character device is represented by a file in `/dev`.
+Examples of block devices are disks and partitions, character devices - serial ports and consoles.
+
+In order to identify which `/dev` node corresponds to the USB card reader, issue `dmesg -w` before plugging it into the USB port. When using a USB card reader, you should see something like:
+
+```
+[21870.506727]  sdb: sdb1 sdb2
+[21870.509486] sd 1:0:0:0: [sdb] Attached SCSI removable disk
+```
+
+In the example above, `/dev/sdb` corresponds to the entire SD card, while `/dev/sdb1` and `/dev/sdb2` are the primary partitions.
+
+If using an internal SD card slot of your laptop, you will see `/dev/mmcblk0`, `/dev/mmcblk0p1`, and `/dev/mmcblk0p2`, respectively.
+
+Let us erase a few megabytes of the SD card to remove any old partition table, 
+filesystem data and boot settings:
+
+```
+$ sudo dd if=/dev/zero of=/dev/sdb bs=1M count=32
+```
+
+`dd` is a low-level copy utility. It copies `count` blocks of size `bs` from an input file `if` to an output file `of`.
+
+`dev/zero` is a special file. All data written to it will be discarded, any
+read from `/dev/zero` returns zero bytes.
+
+
 ## Partitioning
 
 We need to create a partition table for the following card layout:
@@ -140,17 +170,6 @@ You can use gparted (in the menu: System -> Administration -> GParted), fdisk or
 
 ![](gparted.png)
 
-In order to identify which `/dev` node corresponds to the USB card reader, issue `dmesg -w` before plugging it into the USB port. When using an USB card reader, you should see something like:
-
-```
-[21870.506727]  sdb: sdb1 sdb2
-[21870.509486] sd 1:0:0:0: [sdb] Attached SCSI removable disk
-```
-
-In the example above, `/dev/sdb` is the entire SD card, while `/dev/sdb1` and `/dev/sdb2` are the primary partitions.
-
-If using an internal SD card slot of your laptop, you will see `/dev/mmcblk0`, `/dev/mmcblk0p1`, and `/dev/mmcblk0p2`, respectively.
-
 **Note:** You may need to re-insert the card when using some internal SD readers.
 
 ## File system creation
@@ -158,8 +177,8 @@ If using an internal SD card slot of your laptop, you will see `/dev/mmcblk0`, `
 If you used fdisk/cfdisk, you need to create the file systems manually:
 
 ```
-$ mkfs.fat /dev/sdb1 -n boot
-$ mkfs.ext3 /dev/sdb2 -L rootfs
+$ sudo mkfs.fat /dev/sdb1 -n boot
+$ sudo mkfs.ext3 /dev/sdb2 -L rootfs
 ```
 
 # u-boot
@@ -243,7 +262,7 @@ When partitioning with `fdisk`, we left some space before the first partition. W
 
 `$ sudo dd if=u-boot.imx of=/dev/sdb bs=512 seek=2`
 
-`dd` is a low-level copy utility. Here, we copy `u-boot.imx` onto the SD card, in 512-byte blocks, and we start at block 2 (1 KB offset). This offset is necessary for storing the boot block and partition table of the device.
+Here, we copy `u-boot.imx` onto the SD card, in 512-byte blocks, and we start at block 2 (1 KB offset). This offset is necessary for storing the boot block and partition table of the device.
 
 # Linux kernel
 
@@ -410,8 +429,8 @@ First, mount the rootfs partition:
 Extract the file system onto the newly mounted partition:
 
 ```
-$ cd /mnt/sdcard/
-$ sudo tar -xvf ~/training/yocto/build_ul/tmp/deploy/images/imx6ulevk/training-image-imx6ulevk.tar.gz -C /mnt/sdcard/
+$ cd build_ul/tmp/deploy/images/imx6ulevk/
+$ sudo tar -C /mnt/sdcard/ -xvf training-image-imx6ulevk.tar.gz 
 ```
 
 Copy the modules:

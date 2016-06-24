@@ -28,7 +28,7 @@ Contents {-}
 	1. [Kernel deployment]
 
 #. [Root filesystem]
-	1. [Yocto introduction]
+	1. [Yocto Project introduction]
 	1. [Meta layers and recipes]
 	1. [Generating the root filesystem]
 	1. [Deployment and installing modules]

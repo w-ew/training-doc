@@ -116,7 +116,7 @@ sda sda1 sda2</code></pre>
 <p>Let us erase a few megabytes of the SD card to remove any old partition table, filesystem data and boot settings:</p>
 <pre><code>$ sudo dd if=/dev/zero of=/dev/sdb bs=1M count=32</code></pre>
 <p><code>dd</code> is a low-level copy utility. It copies <code>count</code> blocks of size <code>bs</code> from an input file <code>if</code> to an output file <code>of</code>.</p>
-<p><code>dev/zero</code> is a special file. All data written to it will be discarded, any read from <code>/dev/zero</code> returns <code>0x00</code> bytes.</p>
+<p><code>/dev/zero</code> is a special file. All data written to it will be discarded, any read from <code>/dev/zero</code> returns <code>0x00</code> bytes.</p>
 <h2 id="partitioning"><span class="header-section-number">2.3</span> Partitioning</h2>
 <p>We need to create a partition table for the following card layout:</p>
 <table>

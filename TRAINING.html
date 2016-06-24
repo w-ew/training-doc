@@ -20,6 +20,7 @@
 <li><a href="#i.mx-boot-process">i.MX Boot Process</a>
 <ol style="list-style-type: decimal">
 <li><a href="#boot-introduction">Boot introduction</a></li>
+<li><a href="#card-preparation">Card preparation</a></li>
 <li><a href="#partitioning">Partitioning</a></li>
 <li><a href="#file-system-creation">File system creation</a></li>
 </ol></li>
@@ -59,6 +60,7 @@
 </ol></li>
 <li><p><a href="#usb-booting">USB Booting</a></p></li>
 <li><p><a href="#qa">Q&amp;A</a></p></li>
+<li><p><a href="#appendix">Appendix</a></p></li>
 </ol>
 <h1 id="introduction"><span class="header-section-number">1</span> Introduction</h1>
 <p>Welcome to the NXP i.MX6UL Training hands-on workshop!</p>
@@ -104,7 +106,18 @@ sda sda1 sda2</code></pre>
 <div class="figure">
 <img src="git_freescale_com.png" />
 </div>
-<h2 id="partitioning"><span class="header-section-number">2.2</span> Partitioning</h2>
+<h2 id="card-preparation"><span class="header-section-number">2.2</span> Card preparation</h2>
+<p>In Linux, every block device and character device is represented by a file in <code>/dev</code>. Examples of block devices are disks and partitions, character devices - serial ports and consoles.</p>
+<p>In order to identify which <code>/dev</code> node corresponds to the USB card reader, issue <code>dmesg -w</code> before plugging it into the USB port. When using a USB card reader, you should see something like:</p>
+<pre><code>[21870.506727]  sdb: sdb1 sdb2
+[21870.509486] sd 1:0:0:0: [sdb] Attached SCSI removable disk</code></pre>
+<p>In the example above, <code>/dev/sdb</code> corresponds to the entire SD card, while <code>/dev/sdb1</code> and <code>/dev/sdb2</code> are the primary partitions.</p>
+<p>If using an internal SD card slot of your laptop, you will see <code>/dev/mmcblk0</code>, <code>/dev/mmcblk0p1</code>, and <code>/dev/mmcblk0p2</code>, respectively.</p>
+<p>Let us erase a few megabytes of the SD card to remove any old partition table, filesystem data and boot settings:</p>
+<pre><code>$ sudo dd if=/dev/zero of=/dev/sdb bs=1M count=32</code></pre>
+<p><code>dd</code> is a low-level copy utility. It copies <code>count</code> blocks of size <code>bs</code> from an input file <code>if</code> to an output file <code>of</code>.</p>
+<p><code>dev/zero</code> is a special file. All data written to it will be discarded, any read from <code>/dev/zero</code> returns zero bytes.</p>
+<h2 id="partitioning"><span class="header-section-number">2.3</span> Partitioning</h2>
 <p>We need to create a partition table for the following card layout:</p>
 <table>
 <thead>
@@ -156,23 +169,18 @@ sda sda1 sda2</code></pre>
 <div class="figure">
 <img src="gparted.png" />
 </div>
-<p>In order to identify which <code>/dev</code> node corresponds to the USB card reader, issue <code>dmesg -w</code> before plugging it into the USB port. When using an USB card reader, you should see something like:</p>
-<pre><code>[21870.506727]  sdb: sdb1 sdb2
-[21870.509486] sd 1:0:0:0: [sdb] Attached SCSI removable disk</code></pre>
-<p>In the example above, <code>/dev/sdb</code> is the entire SD card, while <code>/dev/sdb1</code> and <code>/dev/sdb2</code> are the primary partitions.</p>
-<p>If using an internal SD card slot of your laptop, you will see <code>/dev/mmcblk0</code>, <code>/dev/mmcblk0p1</code>, and <code>/dev/mmcblk0p2</code>, respectively.</p>
 <p><strong>Note:</strong> You may need to re-insert the card when using some internal SD readers.</p>
-<h2 id="file-system-creation"><span class="header-section-number">2.3</span> File system creation</h2>
+<h2 id="file-system-creation"><span class="header-section-number">2.4</span> File system creation</h2>
 <p>If you used fdisk/cfdisk, you need to create the file systems manually:</p>
-<pre><code>$ mkfs.fat /dev/sdb1 -n boot
-$ mkfs.ext3 /dev/sdb2 -L rootfs</code></pre>
+<pre><code>$ sudo mkfs.fat /dev/sdb1 -n boot
+$ sudo mkfs.ext3 /dev/sdb2 -L rootfs</code></pre>
 <h1 id="u-boot"><span class="header-section-number">3</span> u-boot</h1>
 <h2 id="u-boot-introduction"><span class="header-section-number">3.1</span> u-boot introduction</h2>
 <p>Das U-Boot, or Universal Bootloader, is an open-source bootloader that NXP MPU platforms use to load and run the Linux kernel. We support ARM, ARM64 (Layerscape LS2, future i.MX products), and Power Architecture (QoriQ).</p>
 <p>The u-boot image includes a boot header, which BootROM uses to determine the load address, load size, and optional boot security.</p>
 <h2 id="configuring-u-boot"><span class="header-section-number">3.2</span> Configuring u-boot</h2>
 <p>u-boot sources are located at <code>~/training/uboot-imx</code>.</p>
-<p><strong>Note:</strong> You can see how to download u-boot source code on <a href="#appendix">Appendix</a></p>
+<p><strong>Note:</strong> You can see how to download u-boot source code in the <a href="#appendix">Appendix</a>.</p>
 <p>In the default configuration for i.MX6UL EVK, u-boot expects to see the SD card it has booted from in the microSD card holder on the CPU daughter card (SD2). Because we are using the full-size SD slot on the baseboard (SD1), the default configuration has been modified.</p>
 <p>A local git branch has been created to implement these changes.</p>
 <pre><code>$ cd ~/training/uboot-imx
@@ -205,7 +213,7 @@ index edeac03..87d5a1c 100644
 <h2 id="building-u-boot"><span class="header-section-number">3.3</span> Building u-boot</h2>
 <p>A cross-compiler is necessary to build binaries for a different architecture. In this training we use the cross-compiler installed in <code>/opt/fsl-imx-x11/4.1.15-1.0.0/</code>:</p>
 <pre><code>$ source /opt/fsl-imx-x11/4.1.15-1.0.0/environment-setup-cortexa7hf-vfp-neon-poky-linux-gnueabi</code></pre>
-<p><strong>Note:</strong> You can see how to create a toolchain using yocto on <a href="#appendix">Appendix</a></p>
+<p><strong>Note:</strong> You can see how to create a toolchain using yocto in the <a href="#appendix">Appendix</a>.</p>
 <p>This sets the environment variables for the <code>make</code> utility to use the cross-compiler.</p>
 <p>A configuration must be selected to build for a specific board:</p>
 <p><code>$ make mx6ul_14x14_evk_defconfig</code></p>
@@ -218,7 +226,7 @@ index edeac03..87d5a1c 100644
 <h2 id="u-boot-deployment"><span class="header-section-number">3.4</span> u-boot deployment</h2>
 <p>When partitioning with <code>fdisk</code>, we left some space before the first partition. We will now copy <code>u-boot.imx</code> directly onto that space:</p>
 <p><code>$ sudo dd if=u-boot.imx of=/dev/sdb bs=512 seek=2</code></p>
-<p><code>dd</code> is a low-level copy utility. Here, we copy <code>u-boot.imx</code> onto the SD card, in 512-byte blocks, and we start at block 2 (1 KB offset). This offset is necessary for storing the boot block and partition table of the device.</p>
+<p>Here, we copy <code>u-boot.imx</code> onto the SD card, in 512-byte blocks, and we start at block 2 (1 KB offset). This offset is necessary for storing the boot block and partition table of the device.</p>
 <h1 id="linux-kernel"><span class="header-section-number">4</span> Linux kernel</h1>
 <h2 id="configuring-the-kernel"><span class="header-section-number">4.1</span> Configuring the kernel</h2>
 <p>Linux kernel source tree is located at <code>~/training/linux-2.6-imx</code>.</p>
@@ -312,13 +320,13 @@ $ source setup-environment build_ul/</code></pre>
 $ bitbake training-image</code></pre>
 <p>Inspect files generated under <code>build_ul/tmp/deploy/images/imx6ulevk/</code>.</p>
 <h2 id="deployment-and-installing-modules"><span class="header-section-number">5.4</span> Deployment and installing modules</h2>
-<p>In its default configuration, Yocto creates a full SD card image, which can be flashed onto the card starting at address 0. In this tutorial, we are using u-boot and kernel already copied to SDCard on previous sections <a href="#u-boot-deployment">u-boot deployment</a> and <a href="#kernel-deployment">Kernel deployment</a> , and only the rootfs created by Yocto Project as a <code>.tar.gz</code> image.</p>
+<p>In its default configuration, Yocto creates a full SD card image, which can be flashed onto the card starting at address 0. In this tutorial, we are using u-boot and kernel already copied to SD card on previous sections <a href="#u-boot-deployment">u-boot deployment</a> and <a href="#kernel-deployment">Kernel deployment</a> , and only the rootfs created by Yocto Project as a <code>.tar.gz</code> image.</p>
 <p>First, mount the rootfs partition:</p>
 <p><code>$ sudo mount /dev/sdb2 /mnt/sdcard</code></p>
 <p><strong>Note:</strong> Make sure you do not have the device mounted in the file manager.</p>
 <p>Extract the file system onto the newly mounted partition:</p>
-<pre><code>$ cd /mnt/sdcard/
-$ sudo tar -xvf ~/training/yocto/build_ul/tmp/deploy/images/imx6ulevk/training-image-imx6ulevk.tar.gz -C /mnt/sdcard/</code></pre>
+<pre><code>$ cd build_ul/tmp/deploy/images/imx6ulevk/
+$ sudo tar -C /mnt/sdcard/ -xvf training-image-imx6ulevk.tar.gz </code></pre>
 <p>Copy the modules:</p>
 <pre><code>$ cd ~/training/linux-2.6-modules/
 $ sudo cp -R lib/modules /mnt/sdcard/lib/</code></pre>
@@ -441,16 +449,18 @@ $ scp root@192.168.7.2:/home/root/test.txt .</code></pre>
 <pre><code>$ cd ~/training/imx_usb_loader
 $ sudo ./imx_usb</code></pre>
 <h1 id="qa"><span class="header-section-number">11</span> Q&amp;A</h1>
+<p> </p>
 <h1 id="appendix"><span class="header-section-number">12</span> Appendix</h1>
 <h2 id="u-boot-1"><span class="header-section-number">12.1</span> u-boot</h2>
 <p>The source repository can be cloned with the following command:</p>
 <pre><code>$ git clone git://git.freescale.com/imx/uboot-imx.git -b imx_v2015.04_4.1.15_1.0.0_ga</code></pre>
-<h2 id="toolchain"><span class="header-section-number">12.2</span> Toolchain</h2>
-<p>Using the Yocto Project folder you are working with you can create a toolchain with the following command line:</p>
-<pre><code>$ bitbake core-image-base -c populate_sdk</code></pre>
-<p>At the end of the <code>BitBake</code> execution, the toolchain installer is in <code>&lt;build-dir&gt;tmp/deploy/sdk</code> and can be executed as an script.</p>
-<h2 id="linux-kernel-1"><span class="header-section-number">12.3</span> Linux kernel</h2>
+<h2 id="linux-kernel-1"><span class="header-section-number">12.2</span> Linux kernel</h2>
 <p>The source repository can be cloned with the following command:</p>
 <p><code>$ git clone git://git.freescale.com/imx/linux-2.6-imx.git -b imx_4.1.15_1.0.0_ga</code></p>
+<h2 id="toolchain"><span class="header-section-number">12.3</span> Toolchain</h2>
+<p>Using the Yocto Project you can build an SDK with the following command line:</p>
+<pre><code>$ bitbake core-image-base -c populate_sdk</code></pre>
+<p>The SDK contains the cross-compiling toolchain and all libraries present in the specified system image. Having the libraries makes it possible to build Linux applications fully compatible with the target system.</p>
+<p>The SDK has to be installed on the development system, usually somewhere in <code>/opt</code>. The installer is located in <code>&lt;build-dir&gt;tmp/deploy/sdk</code>. Yocto SDK is used independently from the Yocto BSP installation, and can be used on a different machine.</p>
 </body></html>
 

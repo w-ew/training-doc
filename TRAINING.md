@@ -152,7 +152,7 @@ $ sudo dd if=/dev/zero of=/dev/sdb bs=1M count=32
 `dd` is a low-level copy utility. It copies `count` blocks of size `bs` from an input file `if` to an output file `of`.
 
 `dev/zero` is a special file. All data written to it will be discarded, any
-read from `/dev/zero` returns zero bytes.
+read from `/dev/zero` returns `0x00` bytes.
 
 
 ## Partitioning
